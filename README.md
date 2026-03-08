@@ -1,6 +1,6 @@
 # 🏏 BowlForm AI - Advanced Bowling Action Analysis System
 
-![BowlForm AI Cover](https://via.placeholder.com/1200x400?text=BowlForm+AI+Advanced+Action+Analysis)
+
 
 🔗 **Live Demo:** [https://bowling-frontend-vercel.vercel.app](https://bowling-frontend-vercel.vercel.app)
 
