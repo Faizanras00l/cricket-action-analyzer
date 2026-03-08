@@ -1,8 +1,6 @@
 <div align="center">
-  <video src="https://github.com/Faizanras00l/cricket-action-analyzer/assets/demo_video.mp4" width="800" controls autoplay loop muted></video>
+  <video src="New%20project.mp4" width="800" controls autoplay loop muted></video>
 </div>
-
-*Note: Replace `demo_video.mp4` with a real relative or raw URL link once uploaded to a GitHub Release or an issue comment.*
 
 🔗 **Live Demo:** [https://bowling-frontend-vercel.vercel.app](https://bowling-frontend-vercel.vercel.app)
 
