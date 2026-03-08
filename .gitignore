@@ -13,13 +13,12 @@ env/
 .venv/
 
 # Large videos and processed outputs
-*.mp4
 *.mkv
 *.webm
 *.avi
 *.mov
 # Exceptions, if you want some samples
-!sample_video.mp4
+!New project.mp4
 
 # OS generated files
 .DS_Store
