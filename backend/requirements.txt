@@ -1,0 +1,8 @@
+# BowlForm AI Backend dependencies
+flask==3.0.0
+flask-cors==4.0.0
+opencv-python-headless==4.8.1.78
+mediapipe==0.10.9
+requests==2.31.0
+numpy==1.26.2
+python-dotenv==1.0.0

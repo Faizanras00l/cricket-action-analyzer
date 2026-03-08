@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BowlForm AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: { brand: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: #f8fafc;
+            color: #0f172a;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: #f8fafc;
+            background-image: radial-gradient(at 80% 0%, hsla(189, 100%, 90%, 1) 0px, transparent 50%),
+                radial-gradient(at 0% 50%, hsla(240, 100%, 94%, 1) 0px, transparent 50%),
+                radial-gradient(at 80% 50%, hsla(260, 100%, 95%, 1) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(210, 100%, 90%, 1) 0px, transparent 50%);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, .65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, .8);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, .05),
+                inset 0 1px 0 rgba(255, 255, 255, 1);
+            border-radius: 24px;
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, .7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(255, 255, 255, .8);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, .02);
+        }
+
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            background: rgba(255, 255, 255, .4);
+            transition: all .3s;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.drag-over {
+            border-color: #0ea5e9;
+            background: rgba(255, 255, 255, .9);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(14, 165, 233, .15);
+        }
+
+        .progress-track {
+            background: #e2e8f0;
+            border-radius: 9999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #0ea5e9, #3b82f6);
+            height: 100%;
+            border-radius: 9999px;
+            transition: width .5s ease;
+        }
+
+        .metric-bg {
+            background: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
+            height: 6px;
+        }
+
+        .metric-fill {
+            height: 100%;
+            border-radius: 9999px;
+            background: linear-gradient(90deg, #0ea5e9, #3b82f6);
+            transition: width .6s cubic-bezier(.2, .8, .2, 1);
+        }
+
+        .metric-fill.warn {
+            background: linear-gradient(90deg, #f59e0b, #f97316);
+        }
+
+        .metric-fill.bad {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+
+        .btn-tab {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            transition: all .2s;
+            font-weight: 600;
+            font-size: .875rem;
+        }
+
+        .btn-tab:hover {
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        .btn-tab.active {
+            background: #0ea5e9;
+            border-color: #0ea5e9;
+            color: white;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, .3);
+        }
+
+        .loader {
+            border: 3px solid rgba(14, 165, 233, .1);
+            border-radius: 50%;
+            border-top: 3px solid #0ea5e9;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg)
+            }
+
+            100% {
+                transform: rotate(360deg)
+            }
+        }
+
+        .view-section {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity .4s ease, transform .4s ease;
+        }
+
+        .view-section.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .pill-legal {
+            background: #d1fae5;
+            color: #059669;
+            border: 1px solid #6ee7b7;
+        }
+
+        .pill-illegal {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+
+        .pill-neutral {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .dot-ok {
+            background: #10b981;
+        }
+
+        .dot-warn {
+            background: #f59e0b;
+        }
+
+        .dot-bad {
+            background: #ef4444;
+        }
+
+        /* Live pulse when syncing */
+        @keyframes livePulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .5
+            }
+        }
+
+        .live-dot {
+            animation: livePulse 1.5s ease infinite;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col w-full">
+    <div class="bg-mesh"></div>
+
+    <!-- Navbar -->
+    <nav class="glass-nav py-4 px-6 w-full sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="goHome()">
+                <div class="w-9 h-9 rounded-lg bg-brand-500 text-white flex items-center justify-center shadow-md">
+                    <span class="material-icons-round text-xl">sports_cricket</span>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-slate-800">BowlForm<span
+                        class="text-brand-500">.AI</span></span>
+            </div>
+            <button onclick="goHome()"
+                class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">+ New
+                Analysis</button>
+        </div>
+    </nav>
+
+    <!-- ═══════ LANDING VIEW ═══════ -->
+    <main id="view-landing"
+        class="view-section active flex-1 items-center justify-center p-6 w-full min-h-[calc(100vh-80px)]">
+        <div class="max-w-5xl mx-auto text-center">
+            <div
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 text-brand-600 font-semibold text-sm mb-6 border border-brand-100">
+                <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                AI-Powered Biomechanics
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold tracking-tight text-slate-800 mb-6 leading-tight">
+                Perfect Your <span
+                    class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-blue-600">Bowling
+                    Action</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-500 mb-10 max-w-2xl mx-auto font-medium">
+                Upload your bowling video and receive instant, elite-level kinematic feedback and ICC compliance checks
+                in real-time.
+            </p>
+            <button onclick="showView('upload')"
+                class="bg-brand-500 hover:bg-brand-600 text-white px-8 py-4 rounded-full text-lg font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 flex items-center gap-2 mx-auto">
+                <span class="material-icons-round">play_arrow</span> Start Analysis
+            </button>
+
+            <div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                <div class="glass p-6 hover:-translate-y-1 transition-transform">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-4">
+                        <span class="material-icons-round">gavel</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">ICC Law 24 Compliance</h3>
+                    <p class="text-slate-500 text-sm">Automatically validates your elbow extension against the 15-degree
+                        ICC threshold.</p>
+                </div>
+                <div class="glass p-6 hover:-translate-y-1 transition-transform">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center mb-4">
+                        <span class="material-icons-round">straighten</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">Live Kinematic Tracking</h3>
+                    <p class="text-slate-500 text-sm">Real-time sync of hip-shoulder separation, front knee angle, trunk
+                        tilt, and stride length.</p>
+                </div>
+                <div class="glass p-6 hover:-translate-y-1 transition-transform">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center mb-4">
+                        <span class="material-icons-round">psychology</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">AI Coaching Tips</h3>
+                    <p class="text-slate-500 text-sm">Actionable technical insights generated by DeepSeek based purely
+                        on your measured biomechanics.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════ UPLOAD VIEW ═══════ -->
+    <main id="view-upload" class="view-section flex-1 items-center justify-center p-6 w-full">
+        <div class="w-full max-w-xl">
+            <div class="text-center mb-10">
+                <h2 class="text-4xl font-bold mb-4 text-slate-800 tracking-tight">Analyze Your Action</h2>
+                <p class="text-slate-500 text-lg">Upload your bowling video for instant, AI-driven biomechanical
+                    feedback.</p>
+            </div>
+            <div class="glass p-8 md:p-12">
+                <label for="video-upload" id="upload-label">
+                    <div class="upload-zone rounded-3xl p-12 flex flex-col items-center text-center group"
+                        id="drop-zone">
+                        <div
+                            class="w-20 h-20 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 shadow-sm border border-slate-100 group-hover:scale-105 transition-transform duration-300 group-hover:bg-brand-50">
+                            <span
+                                class="material-icons-round text-4xl text-slate-400 group-hover:text-brand-500 transition-colors">cloud_upload</span>
+                        </div>
+                        <h3 class="text-xl font-semibold text-slate-800 mb-2">Select Video File</h3>
+                        <p class="text-slate-500 mb-6 font-medium">Drag and drop or click to browse</p>
+                        <div
+                            class="px-5 py-2 rounded-full bg-slate-100 text-xs font-semibold text-slate-500 border border-slate-200">
+                            MP4 · MOV · AVI — up to 500 MB</div>
+                    </div>
+                </label>
+                <input type="file" id="video-upload" class="hidden" accept=".mp4,.mov,.avi">
+                <p id="upload-error" class="text-red-500 text-sm text-center mt-4 hidden"></p>
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════ PROCESSING VIEW ═══════ -->
+    <main id="view-processing" class="view-section flex-1 items-center justify-center p-6 w-full">
+        <div class="glass p-12 text-center flex flex-col items-center w-full max-w-md">
+            <div class="loader mb-6"></div>
+            <h2 class="text-2xl font-bold text-slate-800 tracking-tight mb-2">Analyzing Biomechanics</h2>
+            <p class="text-slate-500 font-medium mb-8" id="proc-status-text">Detecting bowling arm…</p>
+            <div class="w-full progress-track mb-3">
+                <div class="progress-fill" id="progress-bar" style="width:0%"></div>
+            </div>
+            <p class="text-sm font-semibold text-brand-500" id="progress-pct">0%</p>
+        </div>
+    </main>
+
+    <!-- ═══════ ANALYSIS VIEW ═══════ -->
+    <main id="view-analysis" class="view-section flex-1 flex-col py-8 px-4 md:px-6 max-w-6xl mx-auto w-full gap-8">
+
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-3 mb-2 flex-wrap">
+                    <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Biomechanical Analysis</h2>
+                    <span id="icc-badge" class="text-xs font-bold px-3 py-1 rounded-full pill-neutral">—</span>
+                    <span id="arm-chip"
+                        class="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">—
+                        ARM</span>
+                    <!-- Live metrics indicator -->
+                    <span id="live-indicator"
+                        class="hidden text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot"></span>LIVE METRICS
+                    </span>
+                </div>
+                <p class="text-sm text-slate-500 font-medium flex items-center gap-1.5">
+                    <span class="material-icons-round text-[16px] text-emerald-500">check_circle</span>Analysis
+                    completed · Metrics update as video plays
+                </p>
+            </div>
+            <button onclick="goHome()" class="btn-tab px-4 py-2.5 rounded-xl flex items-center gap-2">
+                <span class="material-icons-round text-[18px]">add</span> New Analysis
+            </button>
+        </div>
+
+        <!-- Main grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+
+            <!-- LEFT: Video + controls -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                <!-- Video -->
+                <div class="glass overflow-hidden relative aspect-video w-full p-2">
+                    <div class="w-full h-full rounded-[18px] overflow-hidden relative bg-slate-900">
+                        <video id="analysis-video" class="w-full h-full object-contain" controls playsinline></video>
+                        <div
+                            class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm border border-black/5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="text-xs font-bold text-slate-700 tracking-wide"
+                                id="view-mode-label">ANNOTATED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3 view toggle tabs -->
+                <div class="glass p-2 gap-2 w-full mx-auto grid grid-cols-1 sm:grid-cols-3">
+                    <button id="btn-original" class="btn-tab px-4 py-3 rounded-xl flex-1 justify-center"
+                        onclick="setVideoMode('original')">
+                        Original
+                    </button>
+                    <button id="btn-annotated"
+                        class="btn-tab active px-4 py-3 rounded-xl flex items-center justify-center gap-1.5 flex-1"
+                        onclick="setVideoMode('annotated')">
+                        <span class="material-icons-round text-[16px]">accessibility_new</span>Pose Overlay
+                    </button>
+                    <button id="btn-skeleton"
+                        class="btn-tab px-4 py-3 rounded-xl flex items-center justify-center gap-1.5 flex-1"
+                        onclick="setVideoMode('skeleton')">
+                        <span class="material-icons-round text-[16px]">linear_scale</span>Skeleton Only
+                    </button>
+                </div>
+
+                <!-- AI Coaching Tips -->
+                <div class="glass p-6">
+                    <div class="flex items-center gap-2.5 mb-5">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500">
+                            <span class="material-icons-round text-lg">psychology</span>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800">AI Coaching Tips</h3>
+                        <span class="text-xs text-slate-400 font-medium ml-1">· Based on full delivery analysis</span>
+                    </div>
+                    <div id="ai-tips" class="text-slate-600 text-sm leading-relaxed font-medium space-y-2">
+                        <p class="text-slate-400 italic">Waiting for analysis…</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Metrics + ICC -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <!-- Live Kinematics -->
+                <div class="glass p-6 md:p-8">
+                    <div class="flex items-center justify-between mb-7">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center text-brand-500">
+                                <span class="material-icons-round text-lg">straighten</span>
+                            </div>
+                            <h3 class="font-bold text-lg text-slate-800">Live Kinematics</h3>
+                        </div>
+                        <span id="frame-badge"
+                            class="text-xs text-slate-400 font-mono bg-slate-100 px-2 py-1 rounded-lg hidden">f:0</span>
+                    </div>
+                    <div class="space-y-6">
+
+                        <!-- Elbow -->
+                        <div>
+                            <div class="flex justify-between items-end mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full dot-ok" id="dot-elbow"></span>
+                                    <span class="text-sm text-slate-600 font-semibold">Elbow Angle <span
+                                            class="text-xs text-slate-400">(ICC)</span></span>
+                                </div>
+                                <span class="text-2xl font-bold text-slate-800 font-mono transition-all"
+                                    id="val-elbow">—</span>
+                            </div>
+                            <div class="metric-bg">
+                                <div class="metric-fill" id="bar-elbow" style="width:0%"></div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1" id="note-elbow">Δ from arm-horizontal to release ≤
+                                15°</p>
+                        </div>
+
+                        <!-- Front Knee -->
+                        <div>
+                            <div class="flex justify-between items-end mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full dot-ok" id="dot-knee"></span>
+                                    <span class="text-sm text-slate-600 font-semibold">Front Knee Angle</span>
+                                </div>
+                                <span class="text-2xl font-bold text-slate-800 font-mono" id="val-knee">—</span>
+                            </div>
+                            <div class="metric-bg">
+                                <div class="metric-fill" id="bar-knee" style="width:0%"></div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Target: 130–175°</p>
+                        </div>
+
+                        <!-- Hip-Shoulder Sep -->
+                        <div>
+                            <div class="flex justify-between items-end mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full dot-ok" id="dot-hss"></span>
+                                    <span class="text-sm text-slate-600 font-semibold">Hip-Shoulder Sep.</span>
+                                </div>
+                                <span class="text-2xl font-bold text-slate-800 font-mono" id="val-hss">—</span>
+                            </div>
+                            <div class="metric-bg">
+                                <div class="metric-fill" id="bar-hss" style="width:0%"></div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Target: 15–45°</p>
+                        </div>
+
+                        <!-- Trunk Tilt -->
+                        <div>
+                            <div class="flex justify-between items-end mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full dot-ok" id="dot-tilt"></span>
+                                    <span class="text-sm text-slate-600 font-semibold">Trunk Lateral Tilt</span>
+                                </div>
+                                <span class="text-2xl font-bold text-slate-800 font-mono" id="val-tilt">—</span>
+                            </div>
+                            <div class="metric-bg">
+                                <div class="metric-fill" id="bar-tilt" style="width:0%"></div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Target: &lt; 25°</p>
+                        </div>
+
+                        <!-- Stride -->
+                        <div>
+                            <div class="flex justify-between items-end mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full dot-ok" id="dot-stride"></span>
+                                    <span class="text-sm text-slate-600 font-semibold">Stride Length</span>
+                                </div>
+                                <span class="text-2xl font-bold text-slate-800 font-mono" id="val-stride">—</span>
+                            </div>
+                            <div class="metric-bg">
+                                <div class="metric-fill" id="bar-stride" style="width:0%"></div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Target: 1.0–1.55×</p>
+                        </div>
+
+                        <!-- Phase indicator -->
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Delivery
+                                Phase</span>
+                            <span id="phase-badge"
+                                class="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">IDLE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ICC Compliance -->
+                <div class="glass p-6">
+                    <div class="flex items-center gap-2.5 mb-5">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <span class="material-icons-round text-lg">gavel</span>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800">ICC Law 24 Verdict</h3>
+                    </div>
+                    <div id="icc-detail" class="space-y-3 text-sm">
+                        <p class="text-slate-400 italic">Awaiting results…</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════ JAVASCRIPT ═══════ -->
+    <script>
+        /* ── Configuration ─────────────────────────── */
+        // UPDATE THIS URL ONCE DEPLOYED TO HUGGING FACE SPACES
+        const API_BASE = "https://faizanras00l-bowlingbackend.hf.space";
+
+        /* ── State ─────────────────────────────────── */
+        let currentJobId = null;
+        let currentResults = null;
+        let videoMode = "annotated";
+        let frameMetrics = {};   // {frameIdx: angles}
+        let videoFps = 30.0;
+        let lastFrameIdx = -1;
+
+        /* ── View switching ────────────────────────── */
+        function showView(name) {
+            document.querySelectorAll(".view-section").forEach(el => {
+                el.classList.remove("active");
+                el.style.display = "none";
+            });
+            const t = document.getElementById("view-" + name);
+            t.style.display = "flex";
+            void t.offsetWidth;
+            t.classList.add("active");
+        }
+
+        function goHome() {
+            currentJobId = null; currentResults = null;
+            frameMetrics = {}; videoFps = 30.0; lastFrameIdx = -1;
+            document.getElementById("video-upload").value = "";
+            const v = document.getElementById("analysis-video");
+            v.pause(); v.src = "";
+            showView("landing");
+        }
+
+        /* ── Drag & Drop ───────────────────────────── */
+        const dropZone = document.getElementById("drop-zone");
+        dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+        dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+        dropZone.addEventListener("drop", e => {
+            e.preventDefault(); dropZone.classList.remove("drag-over");
+            const file = e.dataTransfer.files[0];
+            if (file) handleFileSelected(file);
+        });
+        document.getElementById("video-upload").addEventListener("change", function () {
+            if (this.files && this.files.length > 0) handleFileSelected(this.files[0]);
+        });
+
+        function handleFileSelected(file) {
+            const ext = "." + file.name.split(".").pop().toLowerCase();
+            if (![".mp4", ".mov", ".avi"].includes(ext)) { showError("Please upload MP4, MOV, or AVI."); return; }
+            showError("");
+            uploadFile(file);
+        }
+        function showError(msg) {
+            const el = document.getElementById("upload-error");
+            el.textContent = msg; el.classList.toggle("hidden", !msg);
+        }
+
+        /* ── Upload ────────────────────────────────── */
+        async function uploadFile(file) {
+            showView("processing");
+            setProgress(2, "Uploading video…");
+            const formData = new FormData();
+            formData.append("video", file);
+            let jobId;
+            try {
+                const res = await fetch(`${API_BASE}/analyze`, { method: "POST", body: formData });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                jobId = data.job_id;
+            } catch (err) { alert("Upload failed: " + err.message); goHome(); return; }
+            currentJobId = jobId;
+            listenProgress(jobId);
+        }
+
+        function listenProgress(jobId) {
+            const source = new EventSource(`${API_BASE}/progress/${jobId}`);
+            source.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+                const pct = data.pct || 0;
+                const status = data.status || "running";
+                let text = pct < 5 ? "Uploading video…"
+                    : pct < 10 ? "Detecting bowling arm…"
+                        : pct < 90 ? "Extracting biomechanical angles…"
+                            : pct < 100 ? "Generating AI coaching tips…"
+                                : "Done!";
+                setProgress(pct, text);
+                if (status === "done" || pct >= 100) { source.close(); fetchResults(jobId); }
+                else if (status === "error") { source.close(); alert("Analysis failed. Try another video."); goHome(); }
+            };
+            source.onerror = () => { source.close(); fetchResults(jobId); };
+        }
+
+        function setProgress(pct, text) {
+            document.getElementById("progress-bar").style.width = pct + "%";
+            document.getElementById("progress-pct").textContent = pct + "%";
+            document.getElementById("proc-status-text").textContent = text;
+        }
+
+        async function fetchResults(jobId) {
+            try {
+                const res = await fetch(`${API_BASE}/results/${jobId}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                currentResults = data;
+                videoFps = data.fps || 30.0;
+                // Load frame metrics
+                await loadFrameMetrics(jobId);
+                populateAnalysis(data, jobId);
+            } catch (err) { alert("Could not load results: " + err.message); goHome(); }
+        }
+
+        async function loadFrameMetrics(jobId) {
+            try {
+                const res = await fetch(`${API_BASE}/framemetrics/${jobId}`);
+                const data = await res.json();
+                frameMetrics = data.metrics || {};
+                videoFps = data.fps || videoFps;
+            } catch (_) { frameMetrics = {}; }
+        }
+
+        /* ── Populate Analysis ─────────────────────── */
+        function populateAnalysis(data, jobId) {
+            const icc = data.icc_compliance || {};
+            const release = (data.phase_data || {}).release || {};
+
+            // Arm chip
+            const arm = data.bowling_arm || "?";
+            document.getElementById("arm-chip").textContent = arm + " ARM";
+
+            // ICC badge
+            const badge = document.getElementById("icc-badge");
+            const overall = icc.overall || "";
+            badge.textContent = overall === "LEGAL & OPTIMAL" ? "✅ LEGAL" : "⚠️ REVIEW";
+            badge.className = "text-xs font-bold px-3 py-1 rounded-full " +
+                (overall === "LEGAL & OPTIMAL" ? "pill-legal" : "pill-illegal");
+
+            // ICC detail panel
+            populateIccDetail(icc);
+
+            // AI tips
+            populateTips(data.ai_coaching_tips || "");
+
+            // Set initial metrics from release snapshot
+            if (release) updateMetricDisplay(release);
+
+            // Set video to annotated mode
+            currentJobId = jobId;
+            setVideoMode("annotated");
+
+            showView("analysis");
+            document.getElementById("live-indicator").classList.remove("hidden");
+        }
+
+        /* ── ICC Detail panel ──────────────────────── */
+        function populateIccDetail(icc) {
+            const iccDetail = document.getElementById("icc-detail");
+            iccDetail.innerHTML = "";
+            const checks = [
+                { label: "Elbow Extension", obj: icc.elbow_extension, key: "legal" },
+                { label: "Front Knee", obj: icc.front_knee, key: "ok" },
+                { label: "Hip-Shoulder", obj: icc.hip_shoulder_separation, key: "ok" },
+                { label: "SCR Risk", obj: icc.shoulder_counter_rotation, key: "ok" },
+                { label: "Stride Length", obj: icc.stride_length, key: "ok" },
+            ];
+            checks.forEach(c => {
+                if (!c.obj) return;
+                const pass = c.obj[c.key];
+                const iconColor = pass ? "text-emerald-500" : pass === false ? "text-red-500" : "text-slate-400";
+                const icon = pass ? "check_circle" : pass === false ? "cancel" : "help";
+                const div = document.createElement("div");
+                div.className = "flex items-start gap-3";
+                div.innerHTML = `<span class="material-icons-round text-[18px] mt-0.5 ${iconColor} flex-shrink-0">${icon}</span>
+                         <div><p class="font-semibold text-slate-700">${c.label}</p>
+                         <p class="text-slate-500 mt-0.5 text-xs">${c.obj.note || ""}</p></div>`;
+                iccDetail.appendChild(div);
+            });
+        }
+
+        /* ── AI Tips ───────────────────────────────── */
+        function populateTips(tips) {
+            const el = document.getElementById("ai-tips");
+            el.innerHTML = "";
+            tips.split("\n").filter(l => l.trim()).forEach(line => {
+                const p = document.createElement("p");
+                p.className = "flex items-start gap-2";
+                p.innerHTML = `<span class="material-icons-round text-[16px] text-indigo-400 flex-shrink-0 mt-0.5">arrow_right</span><span>${line}</span>`;
+                el.appendChild(p);
+            });
+        }
+
+        /* ── Live Metric Sync ──────────────────────── */
+        const video = document.getElementById("analysis-video");
+        video.addEventListener("timeupdate", () => {
+            if (!frameMetrics || Object.keys(frameMetrics).length === 0) return;
+            const frameIdx = Math.round(video.currentTime * videoFps);
+            if (frameIdx === lastFrameIdx) return;
+            lastFrameIdx = frameIdx;
+
+            // Find closest frame in our metrics dict
+            const angles = frameMetrics[String(frameIdx)]
+                || frameMetrics[String(frameIdx - 1)]
+                || frameMetrics[String(frameIdx + 1)];
+            if (angles) updateMetricDisplay(angles);
+
+            // Update frame badge
+            const fb = document.getElementById("frame-badge");
+            fb.classList.remove("hidden");
+            fb.textContent = `f:${frameIdx}`;
+        });
+
+        function updateMetricDisplay(angles) {
+            // Elbow
+            const elbow = angles.elbow_angle;
+            if (elbow !== undefined) {
+                set("val-elbow", elbow.toFixed(1) + "°");
+                setBar("bar-elbow", Math.min(100, (elbow / 180) * 100));
+                setDot("dot-elbow", elbow > 160 ? "warn" : elbow > 170 ? "bad" : "ok");
+            }
+            // Knee
+            const knee = angles.front_knee;
+            if (knee !== undefined) {
+                set("val-knee", knee.toFixed(1) + "°");
+                setBar("bar-knee", Math.min(100, ((knee - 90) / 90) * 100));
+                setDot("dot-knee", (knee >= 130 && knee <= 175) ? "ok" : knee < 130 ? "bad" : "warn");
+            }
+            // HSS
+            const hss = angles.hss;
+            if (hss !== undefined) {
+                set("val-hss", hss.toFixed(1) + "°");
+                setBar("bar-hss", Math.min(100, (hss / 90) * 100));
+                setDot("dot-hss", (hss >= 15 && hss <= 45) ? "ok" : "warn");
+            }
+            // Tilt
+            const tilt = angles.trunk_tilt;
+            if (tilt !== undefined) {
+                set("val-tilt", tilt.toFixed(1) + "°");
+                setBar("bar-tilt", Math.min(100, (tilt / 45) * 100));
+                setDot("dot-tilt", tilt < 25 ? "ok" : tilt < 35 ? "warn" : "bad");
+            }
+            // Stride
+            const stride = angles.stride;
+            if (stride !== undefined) {
+                set("val-stride", stride.toFixed(2) + "×");
+                setBar("bar-stride", Math.min(100, (stride / 2) * 100));
+                setDot("dot-stride", (stride >= 1.0 && stride <= 1.55) ? "ok" : "warn");
+            }
+            // Phase
+            const phase = angles.phase || "idle";
+            const phaseEl = document.getElementById("phase-badge");
+            phaseEl.textContent = phase.replace(/_/g, " ").toUpperCase();
+            const phaseColors = {
+                idle: "bg-slate-100 text-slate-600 border-slate-200",
+                arm_horizontal: "bg-blue-50 text-blue-600 border-blue-200",
+                pre_release: "bg-amber-50 text-amber-600 border-amber-200",
+                release: "bg-emerald-50 text-emerald-600 border-emerald-200",
+            };
+            phaseEl.className = "text-xs font-bold px-3 py-1 rounded-full border " + (phaseColors[phase] || phaseColors.idle);
+        }
+
+        /* ── Video mode toggle ─────────────────────── */
+        function setVideoMode(mode) {
+            videoMode = mode;
+            const video = document.getElementById("analysis-video");
+            const wasPlaying = !video.paused;
+            const t = video.currentTime;
+
+            ["original", "annotated", "skeleton"].forEach(m => {
+                document.getElementById("btn-" + m).classList.toggle("active", m === mode);
+            });
+
+            const labels = { original: "ORIGINAL", annotated: "POSE OVERLAY", skeleton: "SKELETON" };
+            document.getElementById("view-mode-label").textContent = labels[mode] || mode.toUpperCase();
+
+            if (mode === "original") {
+                video.src = `${API_BASE}/video/original/${currentJobId}`;
+            } else if (mode === "annotated") {
+                video.src = `${API_BASE}/video/annotated/${currentJobId}`;
+            } else {
+                video.src = `${API_BASE}/video/skeleton/${currentJobId}`;
+            }
+
+            video.load();
+            video.addEventListener("loadedmetadata", () => {
+                video.currentTime = t;
+                if (wasPlaying) video.play().catch(() => { });
+            }, { once: true });
+        }
+
+        /* ── Helpers ───────────────────────────────── */
+        function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+        function setBar(id, pct) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.width = Math.max(0, pct) + "%";
+            el.classList.toggle("warn", pct >= 75 && pct < 90);
+            el.classList.toggle("bad", pct >= 90);
+            if (pct < 75) el.classList.remove("warn", "bad");
+        }
+        function setDot(id, state) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.className = "w-2 h-2 rounded-full";
+            if (state === "ok") el.classList.add("dot-ok");
+            if (state === "warn") el.classList.add("dot-warn");
+            if (state === "bad") el.classList.add("dot-bad");
+        }
+    </script>
+</body>
+
+</html>
