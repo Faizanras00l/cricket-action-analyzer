@@ -1,5 +1,5 @@
 <div align="center">
-  <video src="New%20project.mp4" width="800" controls autoplay loop muted></video>
+  <video src="https://raw.githubusercontent.com/Faizanras00l/cricket-action-analyzer/main/New%20project.mp4" width="800" controls autoplay loop muted></video>
 </div>
 
 🔗 **Live Demo:** [https://bowling-frontend-vercel.vercel.app](https://bowling-frontend-vercel.vercel.app)
