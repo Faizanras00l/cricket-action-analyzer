@@ -1,0 +1,31 @@
+# Environments
+.env
+
+# Python caching
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Large videos and processed outputs
+*.mp4
+*.mkv
+*.webm
+*.avi
+*.mov
+# Exceptions, if you want some samples
+!sample_video.mp4
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
